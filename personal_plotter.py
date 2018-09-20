@@ -120,28 +120,64 @@ def skew_demo(dataFrame_dummy,
 	return plt
 
 def to_normal_base(x):
-    return (x - x.mean()) / x.std()
+	return (x - x.mean()) / x.std()
 	
-def make_targets(proto_targets, samples=3):
-    top_container = []
-    for i in range(1, samples):
-        top_container.append( proto_targets.quantile(q=(i / (samples * 1.0))) )
+def make_targets(proto_targets, samples=3, labels=None):
 
-    first = True
-    top_container_size = len(top_container)
+	have_labels = False
+	if labels is None:
+		pass
+	else:
+		if len(labels) == samples:
+			have_labels = True
+		else:
+			print("Labels Doesn't Applyed, Sizen Doesnt Match :>> SAMPLES {:d} , LABELS {:d".format(samples, len(labels)))
+			pass
 
-    for i in range(top_container_size):
-        if first:
-            target_container = (proto_targets.values < top_container[i]).astype(np.int) * (i + 1)
-            first = False
-        else:
-            if (i + 1) != top_container_size:
-                target_container += np.multiply((top_container[i-1] <= proto_targets.values),
-                                     (proto_targets < top_container[i])).astype(np.int) * (i + 1)
-            else:
-                target_container += np.multiply((top_container[i-1] <= proto_targets.values), 
-                                     (proto_targets < top_container[i])).astype(np.int) * (i + 1)
+	top_container = []
+	for i in range(1, samples):
+		top_container.append( proto_targets.quantile(q=(i / (samples * 1.0))) )
 
-                target_container += (top_container[i] <= proto_targets.values).astype(np.int) * (i + 2)
-    
-    return target_container
+	first = True
+	top_container_size = len(top_container)
+
+	for i in range(top_container_size):
+		if first:
+			target_container = (proto_targets.values < top_container[i]).astype(np.int) * (i + 1)
+			first = False
+		else:
+			if (i + 1) != top_container_size:
+				target_container += np.multiply((top_container[i-1] <= proto_targets.values),
+									 (proto_targets < top_container[i])).astype(np.int) * (i + 1)
+			else:
+				target_container += np.multiply((top_container[i-1] <= proto_targets.values), 
+									 (proto_targets < top_container[i])).astype(np.int) * (i + 1)
+
+				target_container += (top_container[i] <= proto_targets.values).astype(np.int) * (i + 2)
+
+	if have_labels:
+		target_container = list(map(lambda x: labels[x-1], target_container))
+
+	return target_container
+
+def heat_plot(data_values, function_target, *args):
+	temp = data_value.function_target()
+	sns.heatmap(temp)
+	return plt
+
+def multy_hist(data_values, columns_names, target_names, plot_size=(10, 10), grid_subplot=[3,2], alpha_value=0.3):
+	plt.figure(figsize=plot_size)
+
+	max_plots = data_values.shape[1]
+
+	for col in range(1,max_plots):
+		ax = plt.subplot(grid_subplot[0], grid_subplot[1], col)
+
+		ax.set_title(columns_names[col-1])
+		
+		for c in data_values.target.unique():
+			data_values.loc[ data_values.target == c, columns_names[col-1]].plot.hist(alpha=alpha_value)
+		
+	plt.legend(target_names)
+	plt.tight_layout()
+	return plt
